@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: educonect-plus
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/ready
+    envVars:
+      - key: NODE_VERSION
+        value: 22.20.0
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_ORIGIN
+        sync: false
+      - key: SESSION_TTL_HOURS
+        value: 8

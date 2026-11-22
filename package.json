@@ -1,0 +1,31 @@
+{
+  "name": "educonect-plus",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others --names client,server \"npm run dev --workspace @educonect/client\" \"npm run dev --workspace @educonect/server\"",
+    "build": "npm run build --workspace @educonect/client",
+    "preview": "npm run preview --workspace @educonect/client",
+    "start": "npm run start --workspace @educonect/server",
+    "test": "npm run test --workspaces --if-present",
+    "test:auth": "npm run test --workspace @educonect/server",
+    "test:production": "npm run test:production --workspace @educonect/server",
+    "lint": "eslint .",
+    "seed:admin": "npm run seed:admin --workspace @educonect/server"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.5.0"
+  }
+}
