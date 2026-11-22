@@ -160,3 +160,4 @@
 - `npm.cmd run test:production` — PASS: same-origin Node production, deep links, protected paths và secure cookie.
 - Deploy thật và smoke test URL: **NOT RUN**; chưa có quyền Vercel, chưa có Atlas connection hợp lệ và không có URL public để báo cáo.
 - Cấu hình Vercel: Root Directory để trống hoặc `.`, Framework Preset `Other`, Build Command `npm run build`, Output Directory `client/dist`; env production theo `docs/08_DEPLOY.md`. Không cần đặt `PORT`.
+- GitHub: commit cấu hình `3c95809` đã push fast-forward lên `origin/main` (`https://github.com/hoangthi36/educonect-plus.git`), không force-push; `.env` không được theo dõi.
