@@ -1,4 +1,23 @@
-import 'dotenv/config'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import dotenv from 'dotenv'
+
+const configDirectory = path.dirname(fileURLToPath(import.meta.url))
+
+export const projectRootEnvPath = path.resolve(configDirectory, '../../../.env')
+
+export function loadRootEnv({ env = process.env, envPath = projectRootEnvPath } = {}) {
+  return dotenv.config({
+    path: envPath,
+    processEnv: env,
+    override: false,
+    quiet: true,
+  })
+}
+
+// npm workspaces chạy server với cwd=server/. Luôn nạp .env tại project root;
+// biến do nền tảng deploy cung cấp được giữ nguyên nhờ override=false.
+loadRootEnv()
 
 function required(env, key) {
   const value = env[key]?.trim()

@@ -8,8 +8,8 @@
 - P2b — phần tương tác M2b + luồng báo hỏng M2c trong `/demo`: DONE.
 - M3a/M3b — Express/MongoDB auth, hồ sơ, session và RBAC nối React: DONE.
 - M4 — kiểm thử auth/regression/build/production smoke: DONE.
-- M5 — source đã push GitHub; cấu hình Render + Atlas và hướng dẫn vận hành: READY; deploy thật NOT RUN vì chưa có credentials/Atlas URI.
-- Thư mục gốc có npm workspaces `client/` và `server/`; Express phục vụ React build + `/api` cùng origin ở production.
+- M5 — source đã push GitHub; cấu hình Vercel + Atlas và hướng dẫn vận hành: READY; deploy thật NOT RUN vì chưa có quyền Vercel và Atlas đang từ chối database credentials.
+- Thư mục gốc có npm workspaces `client/` và `server/`; Vercel phục vụ `client/dist` và Express Function `/api` cùng domain. Chế độ Node production vẫn cho Express phục vụ cả hai.
 - Demo cũ được giữ nguyên tại `kem-ban-demo/`; thanh toán/Token/chat thật vẫn chưa triển khai và chưa có URL public.
 
 ## Kiểm kê nguồn P0
@@ -51,7 +51,7 @@
 | M3a | DONE | Express/Mongoose register/login/logout/me, Argon2id, Mongo session, CSRF/Origin, rate limit và admin CLI. |
 | M3b | DONE | AuthProvider/API thật, header theo phiên, profile owner, route guard và dashboard theo role thật. |
 | M4 | DONE | Lint, 19 test client/server, production smoke và build đều PASS. |
-| M5 | READY — NOT DEPLOYED | `render.yaml`, `.env.example`, scripts start/build và hướng dẫn Atlas/Render đã có; thiếu target/quyền cấu hình nên chưa có URL thật. |
+| M5 | READY — NOT DEPLOYED | `vercel.json`, `api/index.js`, `.env.example`, scripts build/start và hướng dẫn Atlas/Vercel đã có; chưa có quyền Vercel và Atlas local đang báo sai database credentials nên chưa có URL thật. |
 
 ## Báo cáo P0
 - Task: kiểm kê demo cũ, mapping sang phạm vi mới và sửa đường dẫn/bối cảnh tiến độ.
@@ -121,7 +121,7 @@
 - Client auth mới: `client/src/features/auth/**`, `LoginPage.jsx`, `RegisterPage.jsx`, `AccountProfilePage.jsx`, `RealDashboardPage.jsx`, `TutorCreditsPage.jsx`, `ForbiddenPage.jsx`; header dùng phiên thật, không có dropdown đổi role.
 - Bảo mật: mật khẩu Argon2id; session lưu MongoDB; cookie `HttpOnly`, `SameSite=Lax`, `Secure` ở production; session rotate khi login và destroy khi logout; CSRF gắn session + kiểm tra Origin; giới hạn login/register theo IP+email; input/update allowlist; public signup chỉ `parent`/`tutor`; admin chỉ tạo bằng CLI idempotent.
 - Dữ liệu tài khoản thật không có Token. `/demo` vẫn là reducer/fixture độc lập trong bộ nhớ, không gọi API auth và không đổi role/quyền/số dư tài khoản.
-- Deploy prep: root workspaces `client/server`, Vite proxy `/api` trong dev, Express phục vụ `client/dist` + API trong production, `render.yaml`, `.env.example`, `.nvmrc`, `README.md`, scripts `dev/build/start/lint/test/test:production/seed:admin`.
+- Deploy prep ban đầu: root workspaces `client/server`, Vite proxy `/api` trong dev, Express phục vụ `client/dist` + API trong Node production, `.env.example`, `.nvmrc`, `README.md`, scripts `dev/build/start/lint/test/test:production/seed:admin`. Cấu hình host đã được chuyển từ Render sang Vercel trong báo cáo mới bên dưới.
 
 ### Kết quả kiểm tra
 - `npm.cmd install` — PASS; audit khi cài: 0 lỗ hổng.
@@ -141,7 +141,22 @@
 ### Tình trạng deploy
 - Deploy thật: **NOT RUN**; không có URL để kiểm tra.
 - GitHub source: `https://github.com/hoangthi36/educonect-plus.git`, nhánh `main`; commit báo cáo `124115f` nối tiếp commit `Initial commit`, push fast-forward, không force-push.
-- Thiếu trong môi trường: `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN` production, Render service/API access. Không có `mongod` local; test dùng MongoDB tạm thời riêng.
-- Việc người dùng cần làm: tạo Atlas DB user quyền tối thiểu và Network Access cho host; tạo Render Blueprint/Web Service từ repo; đặt ba env bí mật trong dashboard; deploy; chạy seed admin bằng env tạm rồi xóa biến seed. Chi tiết chính xác ở `README.md` và `docs/08_DEPLOY.md`.
+- Môi trường ở thời điểm báo cáo này chưa có quyền Vercel. Cấu hình Atlas local đã được cung cấp nhưng database từ chối xác thực; test tự động vẫn dùng MongoDB tạm thời riêng.
+- Việc người dùng cần làm: sửa database user/URI Atlas, import GitHub repo vào Vercel, đặt env trong dashboard, deploy và chỉ chạy seed admin bằng env tạm. Chi tiết chính xác ở `README.md` và `docs/08_DEPLOY.md`.
 - Sau khi có URL public, cần chạy checklist thật: HTTPS cookie, register/login/logout/me, role 403, profile qua restart, refresh deep route, API unknown, logo/assets và xác nhận `/demo` không đổi tài khoản.
 - Không cần cung cấp secrets qua chat. Chỉ cần URL public/remote hoặc cấp quyền trực tiếp cho môi trường deploy nếu muốn Codex tiếp tục smoke test.
+
+## Báo cáo sửa env local và chuẩn bị Vercel
+
+- Task: nạp `.env` root ổn định khi npm workspace chạy từ `server/`; giữ biến nền tảng ưu tiên; chạy local; chuyển deploy prep từ Render sang Vercel mà không đổi nghiệp vụ/UI.
+- File chính đổi/tạo: `server/src/config/env.js`, `server/src/vercelHandler.js`, `api/index.js`, `vercel.json`, `server/test/{env,vercelHandler}.test.js`, `README.md`, `docs/{04_ARCHITECTURE_AUTH,08_DEPLOY,09_PROGRESS}.md`; bỏ cấu hình Render cũ `render.yaml`.
+- Loader xác định `.env` từ vị trí module bằng đường dẫn tuyệt đối tới root, chạy trước `readConfig()` và dùng `override: false`. Kiểm tra từ cwd `server/` xác nhận có đủ cấu hình bắt buộc mà không in giá trị.
+- `npm.cmd run dev` từ root: Vite khởi động tại `http://127.0.0.1:5173`; backend đọc được env nhưng Atlas trả `MongoServerError: bad auth : authentication failed` (code 8000). Connection string/credentials không được in trong báo cáo.
+- Đăng ký/đăng nhập local: **NOT RUN** vì backend chưa kết nối được Atlas. Đây là lỗi database credentials; nếu sau khi sửa credentials xuất hiện timeout/server selection error thì mới kiểm tra Atlas Network Access.
+- Vercel prep: React static output `client/dist`; `api/index.js` export Express handler; `/api/*` rewrite vào Function, các route còn lại fallback React; app API tắt Express static; session vẫn lưu MongoDB và cookie production vẫn HttpOnly/Secure/SameSite=Lax.
+- `npm.cmd run lint` — PASS.
+- `npm.cmd test` — PASS 26/26: 13 client + 13 server, gồm loader env, ưu tiên platform env, Vercel path/khởi tạo/lỗi an toàn và toàn bộ auth/demo regression.
+- `npm.cmd run build` — PASS (Vite, 56 modules).
+- `npm.cmd run test:production` — PASS: same-origin Node production, deep links, protected paths và secure cookie.
+- Deploy thật và smoke test URL: **NOT RUN**; chưa có quyền Vercel, chưa có Atlas connection hợp lệ và không có URL public để báo cáo.
+- Cấu hình Vercel: Root Directory để trống hoặc `.`, Framework Preset `Other`, Build Command `npm run build`, Output Directory `client/dist`; env production theo `docs/08_DEPLOY.md`. Không cần đặt `PORT`.

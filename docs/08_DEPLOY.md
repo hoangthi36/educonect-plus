@@ -1,47 +1,77 @@
-# 08 — Deploy bản báo cáo
+# 08 — Deploy bản báo cáo trên Vercel
 
-## Phương án mặc định đề xuất
-Một Node/Express web service trên Render phục vụ cả React build và API; MongoDB Atlas chứa user/profile/session. Đây là lựa chọn triển khai cho mốc báo cáo, chưa đặt mua host. Không cam kết giá/ưu đãi/free tier; kiểm tra gói và giới hạn trong dashboard tại thời điểm tạo.
-Nếu bạn đã có host Node khác, giữ same-origin và thay bước thao tác host. Không bắt buộc Vercel + Render riêng vì auth cookie sẽ phức tạp hơn.
+## Kiến trúc triển khai
 
-## Trước khi lên host
-Codex phải triển khai và chạy thành công các script từ docs/04_ARCHITECTURE_AUTH.md, khóa dependencies, pin Node tương thích. Không dùng lệnh dưới đây nếu package.json thực tế chưa có scripts tương ứng.
+Một Vercel project lấy source từ repository root. `npm run build` tạo React tại `client/dist`; Vercel phục vụ các file này từ static output/CDN. `api/index.js` export Express handler cho `/api/*`. Rewrite trong `vercel.json` giữ frontend và API cùng domain, đồng thời fallback route React về `index.html`.
+
+Express Function không dùng `express.static()` trên Vercel. Code khởi tạo app với `serveClient: false`; session vẫn nằm trong MongoDB qua `connect-mongo`, không nằm trong bộ nhớ function. Chế độ Node production chạy bằng `npm start` ngoài Vercel vẫn có thể phục vụ `client/dist` như trước.
+
+## Trước khi deploy
+
 ```powershell
-npm ci
-npm run lint
-npm test
-npm run build
+npm.cmd ci --include=dev
+npm.cmd run lint
+npm.cmd test
+npm.cmd run build
+npm.cmd run test:production
 ```
-Khởi động production cục bộ với env test phù hợp, kiểm tra Express trả frontend và /api. Không dùng npm run dev làm start production.
 
-## MongoDB
-Tạo database user riêng cho app, mật khẩu mạnh, quyền tối thiểu với DB app, thiết lập network access cho host. Không dùng tài khoản quản trị Atlas làm database user. Điền connection string vào MONGODB_URI ở host; không gửi URI thật vào chat, Git hoặc frontend. Test database phải khác database báo cáo.
+Không dùng `npm run dev` làm lệnh production. `.env` ở root chỉ dùng local và bị Git bỏ qua. Loader nạp đúng file này bất kể workspace chạy từ `server/`, nhưng `override: false` nên biến do Vercel cung cấp luôn được ưu tiên.
 
-## GitHub
-Tạo repo/remote nếu chưa có. Kiểm tra git status, .gitignore, staged diff; không commit .env, node_modules, giấy tờ, credentials, logs. Giữ .env.example chỉ placeholder. Push source và lockfile. Dùng nhánh release/demo nếu cần tách báo cáo.
+## MongoDB Atlas
 
-## Render
-1. New > Web Service, kết nối repo/nhánh đã chọn.
-2. Runtime Node; Root Directory là root chứa package.json workspaces.
-3. Contract dự kiến: Build `npm ci --include=dev && npm run build`; Start `npm start`. Codex phải xác nhận phù hợp source đã tạo, không copy mù.
-4. Env: NODE_ENV=production, MONGODB_URI, SESSION_SECRET ngẫu nhiên đủ mạnh, APP_ORIGIN=https://<host-thật>. PORT dùng giá trị host cấp. Chỉ placeholder trong docs.
-5. App listen trên 0.0.0.0 và process.env.PORT. Session Mongo store, trust proxy theo host, Secure cookie.
-6. Health path phù hợp /api/ready; response không lộ config.
-7. Deploy; ghi lại URL thật, thời điểm, commit và trạng thái. Nếu app đang cold start hoặc DB lỗi ghi đúng, không báo đã chạy khi chỉ có build.
+Tạo database user riêng cho ứng dụng, mật khẩu mạnh và quyền tối thiểu trên database ứng dụng. Không dùng tài khoản đăng nhập Atlas làm database user. Cho phép hạ tầng Vercel truy cập theo chính sách Network Access của dự án. Không đưa connection string vào Git, frontend, log hoặc chat.
+
+Nếu Atlas báo `bad auth : authentication failed`, kiểm tra/reset database user, chép lại driver URI và URL-encode ký tự đặc biệt trong username/password. Nếu báo server selection timeout thì mới kiểm tra Network Access/IP allowlist và trạng thái cluster.
+
+## Import project vào Vercel
+
+Kết nối repository `hoangthi36/educonect-plus`, chọn nhánh `main`, rồi đặt:
+
+| Trường | Giá trị |
+|---|---|
+| Root Directory | để trống hoặc `.` |
+| Framework Preset | `Other` |
+| Build Command | `npm run build` |
+| Output Directory | `client/dist` |
+| Install Command | để Vercel tự dùng lockfile (`npm install`) |
+| Node.js | 22.x, theo `package.json` |
+
+`vercel.json` khai báo cùng build/output, API Function và rewrite. Không đặt Root Directory là `client`, vì API entrypoint và workspaces nằm tại repository root.
+
+## Environment Variables
+
+Nhập trong Vercel project settings, ít nhất cho Production:
+
+- `MONGODB_URI`: Atlas URI thật.
+- `SESSION_SECRET`: secret ổn định, ngẫu nhiên, ít nhất 32 ký tự.
+- `APP_ORIGIN`: origin HTTPS production thật, không có path hoặc dấu `/` cuối.
+- `SESSION_TTL_HOURS=8`.
+- `LOGIN_RATE_LIMIT_MAX=10`.
+- `REGISTER_RATE_LIMIT_MAX=5`.
+
+Vercel tự thiết lập production runtime; không cần tự đặt `PORT`. Không tạo biến `VITE_MONGODB_URI` hay `VITE_SESSION_SECRET`. Sau khi Vercel cấp domain production, điền domain thật vào `APP_ORIGIN` rồi redeploy. Mutation auth trên preview domain chỉ hoạt động nếu deployment đó có `APP_ORIGIN` khớp chính xác preview origin.
+
+## Deploy và smoke test
+
+1. Deploy commit trên `main`; chỉ ghi nhận thành công khi cả build và function khởi tạo được với Atlas.
+2. Mở `/api/health` và `/api/ready`; response không được lộ cấu hình.
+3. Đăng ký parent/tutor, đăng nhập, reload để kiểm tra phiên, gọi `/me`, đăng xuất và xác nhận route riêng mất quyền.
+4. Kiểm tra sai role trả 403, `/api/unknown` trả JSON 404, cookie có `HttpOnly`, `Secure`, `SameSite=Lax`.
+5. Refresh `/login`, dashboard được phép và các route public để kiểm tra SPA fallback; logo/assets không 404.
+6. Xác nhận `/demo` vẫn chỉ là mô phỏng và không đổi role/credit tài khoản thật.
+
+Chưa có quyền Vercel hoặc Atlas hợp lệ thì ghi **NOT RUN**, không bịa URL.
 
 ## Admin
-Tạo admin bằng seed script đã kiểm tra, chạy qua môi trường quản trị có quyền tới DB. Lấy credentials từ env/hidden input. Script không hardcode, không reset admin sẵn có. Xóa biến seed khỏi môi trường lâu dài sau khi xong. Không xây /create-admin public để tiện deploy.
 
-## Kiểm tra URL thật
-Logo không 404; deep link refresh; login/register/logout; /me; role forbidden; profile persist sau restart; CSRF; API unknown trả JSON. Kiểm tra cookie HTTPS trên browser. /demo không làm đổi quyền hay credit account thật. Làm checklist docs/06_ACCEPTANCE.md và ghi NOT RUN nếu chưa kiểm tra được.
-
-## Những gì báo cáo
-Nêu rõ: auth + profile + phân quyền + deploy thật; business UI mô phỏng. Không kêu phụ huynh/gia sư chuyển tiền thử. Không dùng địa chỉ/SĐT người thật để demo.
+Không có API đăng ký admin công khai. Chạy `npm run seed:admin` từ máy/job quản trị có quyền tới Atlas, dùng `ADMIN_EMAIL` và `ADMIN_PASSWORD` tạm thời, rồi xóa chúng khỏi môi trường. Không lưu hai biến này lâu dài trên Vercel vì Function không dùng chúng.
 
 ## Lỗi thường gặp
-- Build thiếu Vite: kiểm tra install devDependencies trong build và workspace command.
-- Mongo không kết nối: network access/DB user/URI, không log URI đầy đủ.
-- Cookie không lưu: HTTPS, Secure, trust proxy, APP_ORIGIN; kiểm tra request thay vì chuyển token sang localStorage.
-- Reload route 404: SPA fallback sau /api/static, đúng Express version.
-- Service restart mất login: kiểm tra Mongo session store/secret ổn định, không MemoryStore.
-- CORS: mặc định cùng origin; local dùng Vite proxy, không mở '*' kèm credentials.
+
+- Build thiếu Vite: giữ install devDependencies và chạy build ở repository root.
+- API thành trang HTML: kiểm tra rewrite `/api/:path*` đứng trước SPA fallback.
+- Mongo không kết nối: phân biệt lỗi database credentials với timeout/Network Access; không log URI đầy đủ.
+- Cookie không lưu hoặc POST bị 403: kiểm tra HTTPS, `APP_ORIGIN` chính xác và request cùng origin; không chuyển auth sang localStorage.
+- Service restart mất login: kiểm tra Mongo session store và `SESSION_SECRET` ổn định.
+- Preview auth POST bị từ chối: preview host khác `APP_ORIGIN`; dùng production domain hoặc cấu hình origin riêng cho preview rồi redeploy.

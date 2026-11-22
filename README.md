@@ -73,16 +73,20 @@ npm.cmd start
 
 `npm start` chạy Express; Express phục vụ `client/dist` và `/api` trên cùng origin. Production bắt buộc `APP_ORIGIN` là URL HTTPS thật, `NODE_ENV=production`, MongoDB kết nối được và `SESSION_SECRET` ổn định.
 
-## Deploy Render + MongoDB Atlas
+## Deploy Vercel + MongoDB Atlas
 
-Repo có `render.yaml` theo contract trong `docs/08_DEPLOY.md`.
+Repo có `vercel.json` và entrypoint `api/index.js`. Vercel phục vụ React build từ CDN và chuyển `/api/*` vào Express Function; frontend và API vẫn dùng cùng domain.
 
-1. Tạo Atlas database user riêng, quyền tối thiểu cho database ứng dụng; thiết lập Network Access cho hạ tầng Render theo hướng dẫn hiện hành của Atlas.
-2. Push source và `package-lock.json` lên GitHub/GitLab, bảo đảm `.env` không được commit.
-3. Tạo Render Blueprint/Web Service từ repo root. Kiểm tra gói/chi phí trong dashboard trước khi xác nhận.
-4. Đặt `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN=https://<host-thật>` trong Render Environment. Không đặt các giá trị này thành biến `VITE_*`.
-5. Build command: `npm ci --include=dev && npm run build`; start command: `npm start`; health path: `/api/ready`.
+1. Tạo Atlas database user riêng, quyền tối thiểu cho database ứng dụng; cho phép hạ tầng Vercel truy cập trong Atlas Network Access theo chính sách của dự án.
+2. Push source và `package-lock.json` lên GitHub, bảo đảm `.env` không được commit.
+3. Import repository vào Vercel với cấu hình:
+   - Root Directory: để trống hoặc `.` (repository root).
+   - Framework Preset: `Other`.
+   - Build Command: `npm run build`.
+   - Output Directory: `client/dist`.
+4. Đặt `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN=https://<domain-production-thật>`, `SESSION_TTL_HOURS`, `LOGIN_RATE_LIMIT_MAX` và `REGISTER_RATE_LIMIT_MAX` trong Vercel Environment Variables. Không đặt secret thành biến `VITE_*`; không cần tự đặt `PORT` trên Vercel.
+5. `APP_ORIGIN` phải khớp chính xác origin HTTPS đang dùng. Sau khi biết domain production thật, cập nhật biến này rồi redeploy; preview domain khác origin sẽ không được phép gửi mutation auth.
 6. Deploy xong, kiểm tra `/api/health`, `/api/ready`, refresh deep link, register/login/logout, cookie Secure/HttpOnly, sai role 403 và `/api/unknown` trả JSON 404.
-7. Nếu cần admin, chạy `npm run seed:admin` trong shell/job quản trị với biến tạm, sau đó xóa `ADMIN_EMAIL`/`ADMIN_PASSWORD` khỏi môi trường lâu dài.
+7. Nếu cần admin, chạy `npm run seed:admin` từ một môi trường quản trị có quyền kết nối Atlas với biến tạm, sau đó xóa `ADMIN_EMAIL`/`ADMIN_PASSWORD`.
 
-Source báo cáo đã được đẩy lên `https://github.com/hoangthi36/educonect-plus.git`. Môi trường làm việc hiện tại chưa có Atlas URI hoặc quyền Render nên chưa có URL deploy thật.
+Source báo cáo ở `https://github.com/hoangthi36/educonect-plus.git`. Chưa có quyền dự án Vercel và Atlas hiện từ chối database credentials, nên chưa có URL deploy thật.

@@ -8,7 +8,7 @@
 Nếu đã có React/Express tương thích thì dùng cấu trúc sẵn có, tránh khởi tạo app lồng vào app.
 
 ## Triển khai đơn giản
-Production: một Express web service phục vụ `/api/*` và client/dist, kết nối MongoDB (Atlas khi deploy). Cùng origin để giảm vấn đề CORS/cookie giữa Vercel và backend. Dev: Vite proxy /api tới Express. Không yêu cầu tách frontend/backend lên hai host trong mốc đầu.
+Production trên Vercel: static output `client/dist` và Express Function `/api/*` cùng một domain, kết nối MongoDB Atlas. Dev: Vite proxy `/api` tới Express. Chế độ Node production ngoài Vercel vẫn cho Express phục vụ `client/dist`; không tách frontend/backend sang hai origin.
 API 404 phải trả JSON, không rơi vào SPA fallback. SPA fallback chỉ GET HTML route hợp lệ; viết phù hợp phiên bản Express đã khóa. Static chỉ client/dist, tuyệt đối không serve root repo hoặc .env.
 
 ## Lệnh Codex cần tạo và kiểm chứng
