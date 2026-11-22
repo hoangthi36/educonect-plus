@@ -8,7 +8,7 @@
 - P2b — phần tương tác M2b + luồng báo hỏng M2c trong `/demo`: DONE.
 - M3a/M3b — Express/MongoDB auth, hồ sơ, session và RBAC nối React: DONE.
 - M4 — kiểm thử auth/regression/build/production smoke: DONE.
-- M5 — cấu hình deploy Render + Atlas và hướng dẫn vận hành: READY; deploy thật NOT RUN vì chưa có repo/credentials/Atlas URI.
+- M5 — source đã push GitHub; cấu hình Render + Atlas và hướng dẫn vận hành: READY; deploy thật NOT RUN vì chưa có credentials/Atlas URI.
 - Thư mục gốc có npm workspaces `client/` và `server/`; Express phục vụ React build + `/api` cùng origin ở production.
 - Demo cũ được giữ nguyên tại `kem-ban-demo/`; thanh toán/Token/chat thật vẫn chưa triển khai và chưa có URL public.
 
@@ -140,7 +140,8 @@
 
 ### Tình trạng deploy
 - Deploy thật: **NOT RUN**; không có URL để kiểm tra.
-- Thiếu trong môi trường: Git repository/remote, `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN` production, Render service/API access. Không có `mongod` local; test dùng MongoDB tạm thời riêng.
-- Việc người dùng cần làm: tạo/push repo; tạo Atlas DB user quyền tối thiểu và Network Access cho host; tạo Render Blueprint/Web Service từ repo; đặt ba env bí mật trong dashboard; deploy; chạy seed admin bằng env tạm rồi xóa biến seed. Chi tiết chính xác ở `README.md` và `docs/08_DEPLOY.md`.
+- GitHub source: `https://github.com/hoangthi36/educonect-plus.git`, nhánh `main`; commit báo cáo `124115f` nối tiếp commit `Initial commit`, push fast-forward, không force-push.
+- Thiếu trong môi trường: `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN` production, Render service/API access. Không có `mongod` local; test dùng MongoDB tạm thời riêng.
+- Việc người dùng cần làm: tạo Atlas DB user quyền tối thiểu và Network Access cho host; tạo Render Blueprint/Web Service từ repo; đặt ba env bí mật trong dashboard; deploy; chạy seed admin bằng env tạm rồi xóa biến seed. Chi tiết chính xác ở `README.md` và `docs/08_DEPLOY.md`.
 - Sau khi có URL public, cần chạy checklist thật: HTTPS cookie, register/login/logout/me, role 403, profile qua restart, refresh deep route, API unknown, logo/assets và xác nhận `/demo` không đổi tài khoản.
 - Không cần cung cấp secrets qua chat. Chỉ cần URL public/remote hoặc cấp quyền trực tiếp cho môi trường deploy nếu muốn Codex tiếp tục smoke test.

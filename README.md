@@ -85,4 +85,4 @@ Repo có `render.yaml` theo contract trong `docs/08_DEPLOY.md`.
 6. Deploy xong, kiểm tra `/api/health`, `/api/ready`, refresh deep link, register/login/logout, cookie Secure/HttpOnly, sai role 403 và `/api/unknown` trả JSON 404.
 7. Nếu cần admin, chạy `npm run seed:admin` trong shell/job quản trị với biến tạm, sau đó xóa `ADMIN_EMAIL`/`ADMIN_PASSWORD` khỏi môi trường lâu dài.
 
-Môi trường làm việc hiện tại không có remote Git, Atlas URI hoặc quyền Render nên chưa có URL deploy thật.
+Source báo cáo đã được đẩy lên `https://github.com/hoangthi36/educonect-plus.git`. Môi trường làm việc hiện tại chưa có Atlas URI hoặc quyền Render nên chưa có URL deploy thật.
