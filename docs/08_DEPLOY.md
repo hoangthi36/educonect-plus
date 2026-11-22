@@ -43,6 +43,7 @@ Kết nối repository `hoangthi36/educonect-plus`, chọn nhánh `main`, rồi 
 
 Nhập trong Vercel project settings, ít nhất cho Production:
 
+- `NODE_ENV=production`: bật cookie `Secure` và kiểm tra origin production trong code.
 - `MONGODB_URI`: Atlas URI thật.
 - `SESSION_SECRET`: secret ổn định, ngẫu nhiên, ít nhất 32 ký tự.
 - `APP_ORIGIN`: origin HTTPS production thật, không có path hoặc dấu `/` cuối.
@@ -50,7 +51,7 @@ Nhập trong Vercel project settings, ít nhất cho Production:
 - `LOGIN_RATE_LIMIT_MAX=10`.
 - `REGISTER_RATE_LIMIT_MAX=5`.
 
-Vercel tự thiết lập production runtime; không cần tự đặt `PORT`. Không tạo biến `VITE_MONGODB_URI` hay `VITE_SESSION_SECRET`. Sau khi Vercel cấp domain production, điền domain thật vào `APP_ORIGIN` rồi redeploy. Mutation auth trên preview domain chỉ hoạt động nếu deployment đó có `APP_ORIGIN` khớp chính xác preview origin.
+Không cần tự đặt `PORT`. Không tạo biến `VITE_MONGODB_URI` hay `VITE_SESSION_SECRET`. Sau khi Vercel cấp domain production, điền domain thật vào `APP_ORIGIN` rồi redeploy. Mutation auth trên preview domain chỉ hoạt động nếu deployment đó có `APP_ORIGIN` khớp chính xác preview origin.
 
 ## Deploy và smoke test
 

@@ -84,7 +84,7 @@ Repo có `vercel.json` và entrypoint `api/index.js`. Vercel phục vụ React b
    - Framework Preset: `Other`.
    - Build Command: `npm run build`.
    - Output Directory: `client/dist`.
-4. Đặt `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN=https://<domain-production-thật>`, `SESSION_TTL_HOURS`, `LOGIN_RATE_LIMIT_MAX` và `REGISTER_RATE_LIMIT_MAX` trong Vercel Environment Variables. Không đặt secret thành biến `VITE_*`; không cần tự đặt `PORT` trên Vercel.
+4. Đặt `NODE_ENV=production`, `MONGODB_URI`, `SESSION_SECRET`, `APP_ORIGIN=https://<domain-production-thật>`, `SESSION_TTL_HOURS`, `LOGIN_RATE_LIMIT_MAX` và `REGISTER_RATE_LIMIT_MAX` trong Vercel Environment Variables. Không đặt secret thành biến `VITE_*`; không cần tự đặt `PORT` trên Vercel.
 5. `APP_ORIGIN` phải khớp chính xác origin HTTPS đang dùng. Sau khi biết domain production thật, cập nhật biến này rồi redeploy; preview domain khác origin sẽ không được phép gửi mutation auth.
 6. Deploy xong, kiểm tra `/api/health`, `/api/ready`, refresh deep link, register/login/logout, cookie Secure/HttpOnly, sai role 403 và `/api/unknown` trả JSON 404.
 7. Nếu cần admin, chạy `npm run seed:admin` từ một môi trường quản trị có quyền kết nối Atlas với biến tạm, sau đó xóa `ADMIN_EMAIL`/`ADMIN_PASSWORD`.
